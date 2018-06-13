@@ -1,5 +1,10 @@
 `timescale 1 ns / 1 ps
 
+/**
+ * @brief SystemVerilog testbench for simple AXI/ACP Slaves/Masters
+ * @author Konstantin Luebeck (University of Tuebingen, Chair for Embedded Systems)
+ */
+
 // all transactions over the AXI-Busses will be printed onto the command line
 `define AXI_VERBOSE
 // AX_CACHE value

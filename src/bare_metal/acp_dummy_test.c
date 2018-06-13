@@ -1,5 +1,6 @@
 /*
- * acp_dummy.c: simple test application for the AXI ACP
+ * @brief simple bare-metal test application for the AXI ACP
+ * @author Konstantin Luebeck (University of Tuebingen, Chair for Embedded Systems)
  */
 
 #include <stdio.h>

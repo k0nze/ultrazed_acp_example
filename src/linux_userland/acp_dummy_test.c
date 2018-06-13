@@ -1,3 +1,8 @@
+/**
+ * @brief simple Linux userland test application for the AXI ACP
+ * @author Konstantin Luebeck (University of Tuebingen, Chair for Embedded Systems) 
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>

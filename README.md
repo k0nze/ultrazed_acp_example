@@ -11,7 +11,7 @@ under bare-metal and Linux.
 ## Creating a new Vivado Project with an AXI4 IP
 1. `source ${VIVADO_INSTALL_DIR}/settings64.sh`
 2. Start Vivado with: `vivado`
-3. Create a new project for the UltraZed-EG IOCC (xczu3eg-sfva625-1-i) (at: `${PETALINUX_PROJECT_ROOT}`, name: `${VIVADO_PROJECT_NAME}`)
+3. Create a new project for the UltraZed-EG IOCC (xczu3eg-sfva625-1-i) (at: `${VIVADO_PROJECT_ROOT}`, name: `${VIVADO_PROJECT_NAME}`)
 4. Create a new AXI4 IP by going to _Tools -> Create and Package New IP..._
 5. Click _Next >_
 6. Choose _Create AXI4 Peripheral_ and click _Next >_
@@ -74,7 +74,7 @@ The testbench code starts at `initial begin` and is pretty straight forward:
 2. Next the source address, burst length, number of bursts, and the bram address will be send to [acp\_dummy\_v1\_0.v](./src/acp_dummy_1.0/hdl/acp_dummy_v1_0.v) slave registers.
 3. Afterwards the `read_data` bit will be set in the AXI slave register `slv_reg1`. This tells the AXI master to initialize a read burst from the DDR to the BRAM.
 4. As long an AXI transaction is in progress (which can be composed out of several consecutive bursts) the `axi_bus_ready` bit of the AXI slave register `slv_reg0` is set to `0`. The testbench polls this bit over the AXI-Lite bus until it is `1`.
-5. When the `axi_bus_ready` bit `1` the AXI read transaction is finished. The testbench sets the `clear_interrupts` bit to `1` to acknowledge that the transaction is finished this will also unset the bits which indicate that a read or write is finished or in progress.
+5. When the `axi_bus_ready` bit is `1` the AXI read transaction is finished. The testbench sets the `clear_interrupts` bit to `1` to acknowledge that the transaction is finished this will also unset the bits which indicate that a read or write is finished or in progress.
 6. When the read transaction is finished and acknowledged the target address, burst length, number of bursts, and the bram address for a write transaction will be send to [acp\_dummy\_v1\_0.v](./src/acp_dummy_1.0/hdl/acp_dummy_v1_0.v) slave registers.
 7. Afterwards the `write_data` bit will be set in the AXI slave register `slv_reg1`. This tells the AXI master to initialize a write burst from the BRAM to the DDR.
 8. Again the `axi_bus_ready` bit is set to `0` as long the AXI transaction is not finished.
@@ -111,7 +111,7 @@ SOURCE:                         TARGET:
 210000b8 : 0x0000002f0000002e   280000b8 : 0x0000002f0000002e       OK
 ```
 
-This log shows that the data from DDR address `0x21000000` (`SOURCE_ADDRESS`) was successfully transferred to the BRAM and from there written to DDR address `0x28000000`.
+This log shows that the data from DDR address `0x21000000` (`SOURCE_ADDRESS`) was successfully transferred to the BRAM and from there written to DDR address `0x28000000` (`TARGET_ADDRESS`).
 
 The following picture shows the sturcture of the testbench and the connection to the other Verilog files.
 
@@ -248,7 +248,7 @@ SOURCE:                         TARGET:
 ```
 
 ## Linux
-In order to use the AXI ACP under linux you should take a look at this tutorial: [Boot Linux on UltraZed-EG](https://github.com/k0nze/ultrazed_boot_linux). Instead of creating a new Vivado project use the Vivado project provided in this tutorial. You can skip the steps where a Petalinux application is created. Follow the steps to setup an Ubuntu Linux system with the bitstream created in **this** tutorial in which you are able install software via `apt`. Boot the system and install the `build-essential` package:
+In order to use the AXI ACP under Linux you should take a look at this tutorial: [Boot Linux on UltraZed-EG](https://github.com/k0nze/ultrazed_boot_linux) and instead of creating a new Vivado project use the Vivado project created in this tutorial. You can skip the steps where a Petalinux application is created. Follow the steps to setup an Ubuntu Linux system with the bitstream created in **this** tutorial in which you are able install software via `apt`. Boot the system and install the `build-essential` package:
 
 ```
 sudo apt install build-essential
@@ -272,8 +272,6 @@ After you successfully setup a Ubuntu system and loaded the correct bitstream on
 3. Compile the program with: `gcc -o acp_dummy_test acp_dummy_test.c`
 4. Switch to root user: `sudo su`
 5. Run the program with: `./acp_dummy_test`
-
-**TODO:** AXI ACP as a userland driver under Linux does not work properly. The data copied from the source copied to the BRAM and than compied back to the target is not immediately visible, however, if you run the program twice you will see the correct data at the source in the second run.
 
 After you ran the program (twice) you should see an output like this:
 
@@ -310,7 +308,7 @@ The program uses `/dev/mem` for communicating with the AXI Slave registers by ma
 
 ### Kernel Driver `ioremap`
 
-To develop a kernel driver you can't use the installed Ubuntu on the board since the libraries to compile the kernel drivers are not present on the board. You have to use the Petalinux environment to develop and build a kernel driver.
+To develop a kernel driver you can't use the installed Ubuntu on the UltraZed-EG IOCC since the libraries to compile the kernel drivers are not present on the UltraZed-EG IOCC Ubuntu Linux installation. You have to use the Petalinux environment to develop and build a kernel driver/module.
 
 1. Navigate to the root directory of the formerly created Petalinux project `cd ${PETALINUX_PROJECT_ROOT}`
 2. Create a new _module_ (kernel driver) with: `petalinux-create -t modules --name acpdummytest --enable`
@@ -330,7 +328,7 @@ To develop a kernel driver you can't use the installed Ubuntu on the board since
 Now the `acp_dummy` is accessible through the Linux file system as the character device `/dev/acp_dummy`. 
 (In order to unload the kernel module either `reboot` or delete the devive `rm -rf /dev/acp_dummy` and remove the kernel module `rmmod /lib/modules/4.9.0-xilinx-v2017.2/extra/acpdummytest.ko`).
 
-To use the `acp_dummy` character device you can use a short C program. Login to the Ubuntu on the board as a user.
+To use the `acp_dummy` character device you can use a short C program. Login to the Ubuntu Linux on the UltraZed-EG IOCC as a user.
 
 1. On the Ubuntu system open a new file with your favorite editor `vim acp_dummy_test_kernel.c`
 2. Copy the contents of [acp_dummy_test.c](./src/linux_kernel/acp_dummy_test.c) into the newly created file
@@ -368,9 +366,9 @@ SOURCE:                     TARGET:
   23 : 0x0000002f0000002e     23 : 0x0000002f0000002e   OK
 ```
 
-The whole AXI/ACP communication is now abstracted into the kernel module. In the C program you only got two char buffers. First data is written into the `buffer_0` then the whole content of the buffer is written into the BRAM of the `acp_dummy` (`write(fd, buffer_0, BUFFER_LENGTH)`). After that the data from the BRAM is read into the `buffer_1` (`read(fd, buffer_1, BUFFER_LENGTH)`).
+The whole AXI/ACP communication is now abstracted into the kernel module. In the C program you have only two `char` buffers. First data is written into the `buffer_0` then the whole content of the buffer is written into the BRAM of the `acp_dummy` (`write(fd, buffer_0, BUFFER_LENGTH)`). After that the data from the BRAM is read into the `buffer_1` (`read(fd, buffer_1, BUFFER_LENGTH)`).
 
-## How to access the ACP without latency under Linux
+## How to access the ACP without latency (without running it twice) under Linux
 In the previous examples you had to run the C program twice to see the correct data at the target memory location. This is due to the fact that the source and the target memory for the communiction with the ACP are mapped to memory addresses which are part of the _System RAM_. You can see that by running executing `sudo cat /proc/iomem`:
 
 ```
@@ -379,27 +377,27 @@ In the previous examples you had to run the C program twice to see the correct d
   00c90000-00d87fff : Kernel data
 ```
 
-An explanation what is happening when ioremap is called on a _System RAM_ address is given [here on Stackoverflow](https://stackoverflow.com/a/43133171/2096060). In order to exclude a part of the RAM from the administration of the Linux kernel you have to shrink the memory map (or edit the device tree). The easiest way to exclude a part of the RAM is by setting custom _bootargs_ while booting.
+An explanation what is happening when `ioremap` is called on a _System RAM_ address is given [here on Stack Overflow](https://stackoverflow.com/a/43133171/2096060). In order to exclude a part of the RAM from the administration of the Linux kernel you have to shrink the memory map (or edit the device tree). The easiest way to exclude a part of the RAM is by setting custom _bootargs_ while booting.
 
 1. Reboot the UltraZed-EG IOCC.
 2. while booting the following messages will be shown:
-```
-ethernet@ff0e0000 Waiting for PHY auto negotiation to complete...... done
-BOOTP broadcast 1
-BOOTP broadcast 2
-DHCP client bound to address 10.42.0.47 (257 ms)
-Hit any key to stop autoboot:  0
-```
+    ```
+    ethernet@ff0e0000 Waiting for PHY auto negotiation to complete...... done
+    BOOTP broadcast 1
+    BOOTP broadcast 2
+    DHCP client bound to address 10.42.0.47 (257 ms)
+    Hit any key to stop autoboot:  0
+    ```
 3. Hit any key to stop the autoboot process.
 4. Now you can see a prompt: `ZynqMP>`
 5. Type the following into the prompt: `setenv bootargs 'earlycon clk_ignore_unused root=/dev/mmcblk1p2 mem=1920M rw rootwait'` and press enter this will shrink the kernel memory map from 2048MB to 1920MB.
 6. Type `boot` and press enter to boot Ubuntu.
 7. When you logged in into the Ubuntu Linux execute: `sudo cat /proc/iomem`. This will show you the now shrinked memory map.
-```
-00000000-77ffffff : System RAM
-  00080000-00c0ffff : Kernel code
-  00c90000-00d87fff : Kernel data
-```
+    ```
+    00000000-77ffffff : System RAM
+      00080000-00c0ffff : Kernel code
+      00c90000-00d87fff : Kernel data
+    ```
 8. Set the values `SOURCE_ADDRESS` and `TARGET_ADDRESS` to addresses which are above `0x77ffffff` in the Kernel module.
 9. Compile, copy and install the kernel module on the UltraZed-EG IOCC.
 10. Run the C program which uses the kernel module and you should see the correct data at target memory address after only one execution. 
